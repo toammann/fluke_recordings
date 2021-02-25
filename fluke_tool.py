@@ -113,7 +113,7 @@ if args.relative_t:
     #Make time vectors relative (start from t=0)
     fr.rel_time()
 
-if args.print:
+if args.plot:
     #Plot all parsed parsed data
     if not args.relative_t:
         t = fr.data['t_start'] + fr.data['dur']/2
