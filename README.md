@@ -14,7 +14,7 @@ optional arguments:
   -h, --help            show this help message and exit
   -p, --print           Plot data of recording
   -i st[s] sp[s], --integrate st[s] sp[s]
-                        Integrate over a specified time duration in seconds (average dataset)
+                        Integrate over a specified time duration in seconds starting from 0 (first sample, average dataset)
   -gi, --guiint         Integrate over a mouse selected time duration (average dataset)
   -d, --download        Download data from Fluke 287
   -m MULTIPLY, --multiply MULTIPLY
@@ -38,5 +38,5 @@ Select boundaries by using the matplotlib SpanSelector widget (click on plot).
 
 ### TODO
 - Take proper care of units
-- implement download and list function from fluke multimeter
+- implement download and list function from fluke multimeter (https://github.com/N0ury/dmm_util)
 - export the downloaded data to FlukeView Forms compatible *.csv file
