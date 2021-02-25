@@ -71,7 +71,7 @@ group.add_argument('-i', '--integrate',
                             nargs=2,
                             type = float,
                             action = 'append',
-                            metavar=('start[s]', 'stop[s]'),
+                            metavar=('st[s]', 'sp[s]'),
                             help = 'Integrate over a specified time duration in seconds (average dataset)')
 
 group.add_argument('-gi', '--guiint',
