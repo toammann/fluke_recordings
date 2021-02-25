@@ -12,7 +12,7 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  -p, --print           Plot data of recording
+  -p, --plot            Plot data of recording
   -i st[s] sp[s], --integrate st[s] sp[s]
                         Integrate over a specified time duration in seconds starting from 0 (first sample, average dataset)
   -gi, --guiint         Integrate over a mouse selected time duration (average dataset)

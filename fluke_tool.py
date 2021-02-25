@@ -63,7 +63,7 @@ parser = argparse.ArgumentParser(description='Data visualization tool' \
 
 #Argparse actions group
 group = parser.add_mutually_exclusive_group(required=True) 
-group.add_argument('-p', '--print',
+group.add_argument('-p', '--plot',
                            action = 'store_true',
                            help = 'Plot data of recording')
 
