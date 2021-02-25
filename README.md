@@ -40,6 +40,3 @@ Select boundaries by using the matplotlib SpanSelector widget (click on plot).
 - Take proper care of units
 - implement download and list function from fluke multimeter
 - export the downloaded data to FlukeView Forms compatible *.csv file
-
-
-![| 10x10 ](screenshots/guiint.png)
