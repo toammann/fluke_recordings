@@ -1,5 +1,5 @@
 # fluke_recordings
-A python scrip to deal with fluke recordings. Implements functions like plotting, integration...
+A python script to deal with fluke recordings. Implements functions like plotting, integration...
 
 
 ```
@@ -18,7 +18,8 @@ optional arguments:
   -gi, --guiint         Integrate over a mouse selected time duration (average dataset)
   -d, --download        Download data from Fluke 287
   -m MULTIPLY, --multiply MULTIPLY
-                        Paramter to specify a constant multiplier
+                        Paramter to specify a constant multiplier. May be used to muliply a ampere
+                        measurement with a constant line voltage to get watts
   -r, --relative_t      Make time vectors relative (start from t=0)
   ```
 
@@ -27,9 +28,9 @@ Excecute pyton script from command line
 ```
 python fluke_tool.py fluke_export_cir_1.csv -gi
 ```
-Select boundaries by unsing the matplotlib SpanSelector widget (click on plot).
+Select boundaries by using the matplotlib SpanSelector widget (click on plot).
 
-[<img src="screenshots/guiint.png" width="800"/>]
+<img src="screenshots/guiint.png" width="800"/>
 
 ### Requirements
  - scipy

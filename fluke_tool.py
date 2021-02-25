@@ -85,7 +85,9 @@ parser.add_argument('-d', '--download',
 
 parser.add_argument('-m', '--multiply', 
                             type = float, 
-                            help = 'Paramter to specify a constant multiplier')
+                            help = 'Paramter to specify a constant multiplier. \
+                                    May be used to muliply a ampere measurement with a \
+                                    constant line voltage to get watts ')
 
 
 parser.add_argument('-r', '--relative_t', 
