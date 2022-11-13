@@ -21,6 +21,7 @@ def onselect(sel_min, sel_max):
         sel_max: Matplotlib date float (number of days since 0001-01-01 UTC, plus 1)
         
     """
+
     if not args.relative_t:
         #Matplotlib represents dates using floating point numbers 
         #specifying the number of days since 0001-01-01 UTC, plus 1
@@ -30,13 +31,14 @@ def onselect(sel_min, sel_max):
     
     #Numerical integration on data
     res = fr.num_integrate_avg(sel_min, sel_max)
-    
+
     #Initialize static variable at first call
     if not hasattr(onselect, "idx"):
           onselect.idx = 0
 
     #idx = len(tb.get_celld())/num_cols
     idx = (onselect.idx % tb_num_rows) + 1
+
 
     #Copy old table contents to the next row 
     for row in range(idx,1, -1):
@@ -57,6 +59,10 @@ def onselect(sel_min, sel_max):
     
     #Increment static variable
     onselect.idx += 1
+
+    # Redraw the figure (this was not necessary unitl ? somewhere in 2022 ?)
+    fig.canvas.draw()
+    fig.canvas.flush_events()
 
 parser = argparse.ArgumentParser(description='Data visualization tool' \
                                             ' for Fluke 287/289 recordings')
@@ -174,9 +180,9 @@ elif args.guiint:
         direction = 'horizontal',
         minspan = 0,
         useblit = True,
-        span_stays = True,
+        interactive = True,
         button = 1, #left mouse button
-        rectprops = {'facecolor':'grey', 'alpha':0.3}
+        props = {'facecolor':'grey', 'alpha':0.3}
     )
 
     #Set Axes
@@ -210,9 +216,8 @@ elif args.guiint:
          cell_text.append([" ", " ", " "," "," "])
 
 
-
     #Draw table
-    tb = ax_t.table(    cellText=cell_text,
+    tb = ax_t.table(    cellText = cell_text,
                         colColours = c_colors,
                         colLabels  = c_headers,
                         bbox=[0, 0, tb_box_width, tb_box_height], #[left, bottom, width, height]

@@ -2,7 +2,10 @@ import csv
 import numpy as np                                     #for csv parser
 from datetime import datetime, timezone, timedelta     #for csv parser, num_integrate_avg
 from scipy import integrate                            #for trapz() integration
+import serial
+import time
 
+import warnings
 
 class fluke_recordings:
     """Example Google style docstrings.
@@ -28,6 +31,7 @@ class fluke_recordings:
                                         'summary_sample'
                                         'unit'
     """
+    __ser = 0
     
     # def __init__(self):
     #     self.meas_device =
@@ -84,28 +88,28 @@ class fluke_recordings:
                         
                         #Samples (measured at t_start)
                         sample_split = row[1].split()[0]
-                        samples = np.append(samples, float(sample_split.replace(',', '.')))
+                        samples = np.append(samples, self.str2float(sample_split))
 
                         t = datetime.strptime(row[2], fluke_date_fmt_str)
                         t_start = np.append(t_start, t) #Sample time stamps
 
                         #Max measures
                         max_val_split = row[5].split()[0]
-                        max_val = np.append(max_val, float(max_val_split.replace(',', '.')))               
+                        max_val = np.append(max_val, self.str2float(max_val_split))
                         
                         t = datetime.strptime(row[4], fluke_date_fmt_str)
                         t_max = np.append(t_max, t) #Time stap of max_val samples
 
                         #Min measures
                         min_val_split = row[8].split()[0]
-                        min_val = np.append(min_val, float(min_val_split.replace(',', '.')))
+                        min_val = np.append(min_val, self.str2float(min_val_split))
 
                         t = datetime.strptime(row[7], fluke_date_fmt_str)
                         t_min = np.append(t_min, t) #Time stamp of min_val samples
 
                         # avg measures
                         avg_split = row[6].split()[0]
-                        avg = np.append(avg, float(avg_split.replace(',', '.')))
+                        avg = np.append(avg, self.str2float(avg_split))
 
                         #Time stamp of intervall end
                         t = datetime.strptime(row[10], fluke_date_fmt_str)
@@ -150,7 +154,7 @@ class fluke_recordings:
         timestamp_vectorized = np.vectorize(datetime.timestamp) #Vectorized: Get number of seconds since epoch
         
         #Collect integration data
-        avg = self.data["avg"]
+        avg = self.data["avg"].copy()
 
         if type(self.data['t_start'][0]) is datetime:
             #Convert integration limits to seconds since epoch
@@ -173,6 +177,10 @@ class fluke_recordings:
         #Slice data to index
         avg = avg[idx_min:idx_max+1]
         t = t[idx_min:idx_max+1]
+
+        #Cleanup NaN samples if present
+        if any(np.isnan(avg)):
+            avg = self.cleanup_nan(avg)
 
         #Integrate using the composite trapezoidal rule.
         res = integrate.trapz(avg, t)
@@ -208,3 +216,106 @@ class fluke_recordings:
         self.data["t_stop"] = total_seconds_vectorized(self.data["t_stop"] - self.data["t_stop"][0])
         self.data["min"][0] = total_seconds_vectorized(self.data["min"][0] - self.data["min"][0][0])
         self.data["max"][0] = total_seconds_vectorized(self.data["max"][0] - self.data["max"][0][0])
+
+
+    def init_serial(self):
+        #serial port settings
+        try:
+            self.ser = serial.Serial(
+            port='/dev/ttyUSB0',
+            baudrate=115200,
+            bytesize=8, parity='N', 
+            stopbits=1, timeout=0.5, 
+            rtscts=False, dsrdtr=False
+            )
+
+        except serial.serialutil.SerialException as err:
+            print ('Serial Port /dev/cu.usbserial-AK05FTGH does not respond')
+            print (err)
+            exit()
+
+    def serial_cmd(self, cmd):
+        self.ser.write(cmd.encode() + b'\r')
+        time.sleep(1)
+        bytes_read = self.ser.read(self.ser.inWaiting())
+        print(bytes_read)
+
+    @staticmethod
+    def str2float(s):
+        """
+        Converts strings containing a floating point number to a  float. If the string does not contain a valid 
+        number (e.g "13.29 A" or "a13.29") the functions returns NaN values (np.nan).
+
+        A "," decimal separator will be replaced by a "."
+
+        Args:
+            s: string, string to be converted to a float value
+
+        Return:
+            flt: float, floating point representation (NaN if not feasible)
+        """
+
+        # Replace "," decimal seperator
+        s = s.replace(',', '.')
+
+        try:
+            flt = float(s)  # Type-casting the string to `float`.
+                            # If string is not a valid `float`, 
+                            # it'll raise `ValueError` exception
+        except ValueError:
+            warnings.simplefilter('module')
+            warnings.warn("Invalid Value '%s' detected. Setting it to NaN..." % s)
+            #print("Warning: Invalid Value '%s' detected. Setting it to NaN" % s)
+            return np.NaN
+
+        return flt
+
+    @staticmethod
+    def cleanup_nan(data):
+        """
+        Tries to clean up nan data by taking the mean value of the prior sample and the next non NaN sample.
+        If the NaN value is at the start of the array, the Nan value will be replaced by the value of the second sample
+        If the NaN value is at the end of the array, the Nan value will be replaced by the value of the second last sample
+
+        There are cases where the the above conditons can not be applied (e.g. arrays containing only NaN values). In this case
+        the NaN value will persist in the output data
+
+        Args:
+            data: numpy array, data array to be cleaned from NaN values
+        Return:
+            data: numpy array, data cleaned up from NaN values
+        """
+
+        if len(data) < 2:
+            # only one NaN element, there is nothing to "guess"
+            return np.nan
+
+        #Collect all NaN values
+        nan_val_idxs = np.argwhere(np.isnan(data))
+
+        #Handle NaN data by taking the mean of the sample before and after the NaN value
+        for idx in np.nditer(nan_val_idxs):
+            #previous_non_nan_idx = np.isnan(data[idx+1:])
+
+            if idx == 0:
+                # First element
+                data[idx] = data[1]
+                warnings.warn("The first sample is a NaN value replacing it by the value of the second sample")
+
+            elif idx == len(data)-1:
+                #Last element
+                data[idx] = data[-2]
+                warnings.warn("The last sample is a NaN value replacing it by the value of the second last sample")
+            else:
+                #All other elements
+
+                next_samples = data[idx+1:]
+
+                #Get the next non NaN (finite) value
+                next_finte_val= next_samples[np.isfinite(next_samples)][0] # np.argwhere(np.isfinite(next_samples))[0]
+
+                #Replace the NaN value by the mean value of the prior sample and the next non Nan value
+                data[idx] = np.mean((data[idx-1], next_finte_val))
+                warnings.warn("NaN value detected. Replace the NaN value by the mean value of the prior sample and the next non NaN sample")
+
+        return data
